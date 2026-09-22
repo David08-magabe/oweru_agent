@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8" />
+<title>Oweru General Agent — Dashboard</title>
+<style>
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #F9F8F6; color: #14213D; padding: 32px;
+  }
+  h1 { margin-bottom: 4px; }
+  .sub { color: #777; margin-bottom: 24px; }
+  #login-box {
+    max-width: 360px; margin-top: 60px; padding: 24px; background: white;
+    border-radius: 12px; border: 1px solid #E7E3DB;
+  }
+  #login-box input {
+    width: 100%; padding: 10px; margin: 8px 0 16px; border: 1px solid #E7E3DB;
+    border-radius: 8px; box-sizing: border-box;
+  }
+  #login-box button, .refresh-btn {
+    background: linear-gradient(135deg, #A97C1E, #F2C94C); color: #14213D;
+    border: none; padding: 10px 18px; border-radius: 20px; font-weight: 700; cursor: pointer;
+  }
+  .refresh-btn:disabled { opacity: 0.6; cursor: default; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: white; border: 1px solid #E7E3DB; border-radius: 12px; padding: 18px; }
+  .card .value { font-size: 28px; font-weight: 700; color: #14213D; }
+  .card .label { font-size: 12.5px; color: #777; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid #E7E3DB; font-size: 13.5px; }
+  th { background: #14213D; color: white; }
+  section { margin-bottom: 28px; }
+  #dashboard { display: none; }
+  .error { color: #B00020; font-size: 13px; margin-top: 6px; }
+  .status-row { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .status-text { font-size: 13px; color: #777; }
+</style>
+</head>
+<body>
+
+  <div id="login-box">
+    <h2>Oweru General Agent Dashboard</h2>
+    <p style="color:#777; font-size:13px;">Weka admin key kuona takwimu.</p>
+    <input type="password" id="adminKey" placeholder="Admin API key" />
+    <button onclick="loadStats()">Ingia</button>
+    <p id="loginError" class="error"></p>
+  </div>
+
+  <div id="dashboard">
+    <h1>Oweru General Agent — Dashboard</h1>
+    <p class="sub">Takwimu za mazungumzo, maswali ya mara kwa mara, na Mjengo Challenge.</p>
+
+    <div class="status-row">
+      <button class="refresh-btn" id="refreshBtn" onclick="loadStats()">Sasisha (Refresh)</button>
+      <span class="status-text" id="statusText"></span>
+    </div>
+    <p id="dashboardError" class="error"></p>
+
+    <section class="grid" id="summaryCards"></section>
+
+    <section>
+      <h3>Maswali Yanayoulizwa Mara kwa Mara (FAQ)</h3>
+      <table><thead><tr><th>Swali</th><th>Mara ngapi</th><th>Mara ya mwisho</th></tr></thead><tbody id="faqTable"></tbody></table>
+    </section>
+
+    <section>
+      <h3>Wanachama wa Mjengo Challenge kwa hali</h3>
+      <table><thead><tr><th>Status</th><th>Idadi</th></tr></thead><tbody id="mjengoStatusTable"></tbody></table>
+    </section>
+
+    <section>
+      <h3>Mazungumzo — siku 7 zilizopita</h3>
+      <table><thead><tr><th>Tarehe</th><th>Idadi ya mazungumzo</th></tr></thead><tbody id="last7DaysTable"></tbody></table>
+    </section>
+  </div>
+
+<script>
+  const API_BASE = "http://localhost:4000";
+
+  function showError(message) {
+    const dashboardVisible = document.getElementById("dashboard").style.display === "block";
+    document.getElementById(dashboardVisible ? "dashboardError" : "loginError").textContent = message;
+  }
+  function clearErrors() {
+    document.getElementById("loginError").textContent = "";
+    document.getElementById("dashboardError").textContent = "";
+  }
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+  function formatDate(iso) {
+    try { return new Date(iso).toLocaleString(); } catch { return iso; }
+  }
+  function formatMoney(n) {
+    return Number(n).toLocaleString("en-US") + " TZS";
+  }
+
+  async function loadStats() {
+    const key = document.getElementById("adminKey").value.trim();
+    if (!key) { showError("Tafadhali weka admin key."); return; }
+
+    clearErrors();
+    const btn = document.getElementById("refreshBtn");
+    const statusText = document.getElementById("statusText");
+    if (btn) btn.disabled = true;
+    if (statusText) statusText.textContent = "Inasasisha...";
+
+    try {
+      const res = await fetch(API_BASE + "/admin/stats", { headers: { "x-admin-key": key } });
+      if (res.status === 401) { showError("Admin key si sahihi."); return; }
+      if (!res.ok) { showError("Server imekataa ombi (HTTP " + res.status + ")."); return; }
+
+      const data = await res.json();
+      localStorage.setItem("oweru_admin_key", key);
+      document.getElementById("login-box").style.display = "none";
+      document.getElementById("dashboard").style.display = "block";
+
+      document.getElementById("summaryCards").innerHTML = `
+        <div class="card"><div class="value">${data.totalConversations}</div><div class="label">Jumla ya mazungumzo</div></div>
+        <div class="card"><div class="value">${data.totalMessages}</div><div class="label">Jumla ya ujumbe</div></div>
+        <div class="card"><div class="value">${data.messagesLast24h}</div><div class="label">Ujumbe (masaa 24)</div></div>
+        <div class="card"><div class="value">${formatMoney(data.mjengoTotalContributed)}</div><div class="label">Jumla ya michango ya Mjengo Challenge</div></div>
+      `;
+
+      document.getElementById("faqTable").innerHTML = (data.frequentQuestions || [])
+        .map(r => `<tr><td>${escapeHtml(r.question)}</td><td>${r.count}</td><td>${formatDate(r.lastAskedAt)}</td></tr>`).join("")
+        || "<tr><td colspan='3'>Hakuna data bado</td></tr>";
+
+      document.getElementById("mjengoStatusTable").innerHTML = (data.mjengoMembersByStatus || [])
+        .map(r => `<tr><td>${r.status}</td><td>${r.count}</td></tr>`).join("")
+        || "<tr><td colspan='2'>Hakuna wanachama bado</td></tr>";
+
+      document.getElementById("last7DaysTable").innerHTML = data.conversationsLast7Days
+        .map(r => `<tr><td>${r.date}</td><td>${r.count}</td></tr>`).join("")
+        || "<tr><td colspan='2'>Hakuna data bado</td></tr>";
+
+      if (statusText) statusText.textContent = "Imesasishwa: " + new Date().toLocaleTimeString();
+    } catch (err) {
+      showError("Imeshindwa kuunganisha na server. Hakikisha 'npm run dev' bado inaendesha.");
+      console.error(err);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const saved = localStorage.getItem("oweru_admin_key");
+    if (saved) { document.getElementById("adminKey").value = saved; loadStats(); }
+  });
+</script>
+</body>
+</html>

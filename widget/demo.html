@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+  <meta charset="UTF-8" />
+  <title>Oweru Widget — General Mode Demo</title>
+  <style>
+    body {
+      margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #F5F5F3; height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    window.OWERU_AGENT_CONFIG = {
+      apiBaseUrl: "http://localhost:4000",
+      greeting: "Habari! Karibu Oweru. Ninaweza kukueleza kuhusu kampuni yetu na maeneo tunayofanyia kazi — unahitaji nini?"
+    };
+  </script>
+  <script src="./oweru-widget.js"></script>
+</body>
+</html>
