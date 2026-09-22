@@ -31,9 +31,9 @@
     config.greeting ||
     "Habari! Karibu Oweru. Nikusaidieje leo — unatafuta kununua, kukodi, au kuuza mali?";
 
-  // ---------------------------------------------------------------
+
   // Colors — matches Oweru brand (gold gradient + navy + cream)
-  // ---------------------------------------------------------------
+  
   const LOGO_DATA_URI = "data:image/png;base64,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";
   const PROACTIVE_GREETING =
     config.proactiveGreeting ||
@@ -49,10 +49,10 @@
     borderGray: "#E7E3DB",
   };
 
-  // ---------------------------------------------------------------
+  
   // Session ID — persists per browser so the agent keeps context
   // across page reloads within the same visit.
-  // ---------------------------------------------------------------
+
   function getSessionId() {
     const key = "oweru_agent_session_id";
     let id = localStorage.getItem(key);
@@ -69,9 +69,7 @@
 
   let sessionId = getSessionId();
 
-  // ---------------------------------------------------------------
   // Styles
-  // ---------------------------------------------------------------
   const style = document.createElement("style");
   style.textContent = `
     #oweru-widget-root * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -252,9 +250,7 @@
   `;
   document.head.appendChild(style);
 
-  // ---------------------------------------------------------------
   // DOM structure
-  // ---------------------------------------------------------------
   const root = document.createElement("div");
   root.id = "oweru-widget-root";
   root.innerHTML = `
